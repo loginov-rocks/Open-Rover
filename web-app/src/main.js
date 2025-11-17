@@ -2,7 +2,11 @@
 const deviceNameLabel = document.getElementById('device-name');
 const connectButton = document.getElementById('connect');
 const disconnectButton = document.getElementById('disconnect');
+const joystickArea = document.getElementById('joystick-area');
+const joystickContainer = document.getElementById('joystick');
+const joystickHandle = document.getElementById('joystick-handle');
 const terminalContainer = document.getElementById('terminal');
+const toggleJoystickButton = document.getElementById('toggle-joystick');
 const messageForm = document.getElementById('message-form');
 const messageInput = document.getElementById('message-input');
 
@@ -10,6 +14,7 @@ const messageInput = document.getElementById('message-input');
 const defaultDeviceName = 'Web Bluetooth Terminal';
 const terminalAutoScrollingLimit = terminalContainer.offsetHeight / 2;
 let isTerminalAutoScrolling = true;
+let isJoystickVisible = false;
 
 const logToTerminal = (message, type = '') => {
   terminalContainer.insertAdjacentHTML('beforeend', `<div${type && ` class="${type}"`}>${message}</div>`);
@@ -47,6 +52,17 @@ bluetoothTerminal.onLog((logLevel, method, message) => {
   }
 
   logToTerminal(message);
+});
+
+const joystick = new Joystick({
+  area: joystickArea,
+  document,
+  fractionDigits: 2,
+  handle: joystickHandle,
+});
+
+joystick.onUpdate((x, y) => {
+  console.log({x, y});
 });
 
 // Bind event listeners to the UI elements.
@@ -101,4 +117,14 @@ terminalContainer.addEventListener('scroll', () => {
   const scrollTopOffset = terminalContainer.scrollHeight - terminalContainer.offsetHeight - terminalAutoScrollingLimit;
 
   isTerminalAutoScrolling = (scrollTopOffset < terminalContainer.scrollTop);
+});
+
+toggleJoystickButton.addEventListener('click', () => {
+  isJoystickVisible = !isJoystickVisible;
+
+  if (isJoystickVisible) {
+    joystickContainer.classList.add('visible');
+  } else {
+    joystickContainer.classList.remove('visible');
+  }
 });

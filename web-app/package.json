@@ -14,11 +14,15 @@
     "build:html": "copyfiles -f src/*.html dist",
     "build:js": "npm run build:deps:js && npm run build:src:js",
     "build:public": "copyfiles -f public/* dist && copyfiles -f public/icons/* dist/icons",
-    "build:src:js": "copyfiles -f src/sw.js dist && copyfiles -f src/main.js src/register-sw.js dist/js",
+    "build:src:js": "copyfiles -f src/sw.js dist && copyfiles -f src/Joystick.js src/main.js src/register-sw.js dist/js",
     "build:src:styles": "sass src/styles/styles.scss:dist/css/styles.css --no-source-map",
     "build:styles": "npm run build:deps:styles && npm run build:src:styles",
     "deploy": "gh-pages -d dist",
-    "dev:src:styles": "npm run build:src:styles -- --watch",
+    "dev": "npm run build:clean && concurrently --names html,js,public,styles \"npm run dev:html\" \"npm run dev:js\" \"npm run dev:public\" \"npm run dev:styles\"",
+    "dev:html": "nodemon --watch src -e html --exec \"npm run build:html\"",
+    "dev:js": "npm run build:deps:js && nodemon --watch src -e js --exec \"npm run build:src:js\"",
+    "dev:public": "nodemon --watch public -e \"*\" --exec \"npm run build:public\"",
+    "dev:styles": "npm run build:deps:styles && npm run build:src:styles -- --watch",
     "lint": "eslint src eslint.config.mjs",
     "serve": "browser-sync start --server dist",
     "start": "npm run serve -- --watch"
@@ -47,15 +51,19 @@
     "url": "https://github.com/loginov-rocks/Web-Bluetooth-Terminal/issues"
   },
   "homepage": "https://loginov-rocks.github.io/Web-Bluetooth-Terminal/",
+  "dependencies": {
+    "bluetooth-terminal": "^1.6.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
-    "bluetooth-terminal": "^1.6.0",
     "browser-sync": "^3.0.4",
+    "concurrently": "^9.2.1",
     "copyfiles": "^2.4.1",
     "eslint": "^9.27.0",
     "eslint-config-google": "^0.14.0",
     "gh-pages": "^6.3.0",
     "globals": "^16.1.0",
+    "nodemon": "^3.1.10",
     "normalize.css": "^8.0.1",
     "rimraf": "^6.0.1",
     "sass": "^1.89.0"

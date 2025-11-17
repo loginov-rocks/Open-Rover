@@ -20,8 +20,12 @@
   <link rel="manifest" href="site.webmanifest" />
   <link rel="shortcut icon" href="icons/favicon.ico" />
 
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=bluetooth,bluetooth_disabled,joystick,send"
+    rel="stylesheet" />
   <link rel="stylesheet" href="css/normalize.css" />
   <link rel="stylesheet" href="css/styles.css" />
 
@@ -33,12 +37,21 @@
     <div class="toolbar">
       <div id="device-name" class="name">Web Bluetooth Terminal</div>
       <div class="buttons">
+        <button id="toggle-joystick" type="button" aria-label="Toggle Joystick">
+          <span class="material-symbols-outlined">joystick</span>
+        </button>
         <button id="connect" type="button" aria-label="Connect">
-          <i class="material-icons">bluetooth_connected</i>
+          <span class="material-symbols-outlined">bluetooth</span>
         </button>
         <button id="disconnect" type="button" aria-label="Disconnect">
-          <i class="material-icons">bluetooth_disabled</i>
+          <span class="material-symbols-outlined">bluetooth_disabled</span>
         </button>
+      </div>
+    </div>
+    <div id="joystick" class="joystick">
+      <div id="joystick-area" class="joystick-area">
+        <div class="joystick-half-range"></div>
+        <div id="joystick-handle" class="joystick-handle"></div>
       </div>
     </div>
     <div id="terminal" class="terminal"></div>
@@ -46,12 +59,13 @@
       <input id="message-input" type="text" aria-label="Input" autocomplete="off"
         placeholder="Type something to send...">
       <button type="submit" aria-label="Send">
-        <i class="material-icons">send</i>
+        <span class="material-symbols-outlined">send</span>
       </button>
     </form>
   </div>
 
   <script src="js/BluetoothTerminal.js"></script>
+  <script src="js/Joystick.js"></script>
   <script src="js/main.js"></script>
   <script src="js/register-sw.js"></script>
 
