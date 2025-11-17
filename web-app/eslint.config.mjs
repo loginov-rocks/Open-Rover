@@ -18,6 +18,7 @@ export default defineConfig([
         ...globals.browser,
         BluetoothTerminal: 'readonly',
         importScripts: 'readonly',
+        Joystick: 'readonly',
         workbox: 'readonly',
       },
     },

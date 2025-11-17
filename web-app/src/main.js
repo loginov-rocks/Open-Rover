@@ -16,6 +16,14 @@ const terminalAutoScrollingLimit = terminalContainer.offsetHeight / 2;
 let isTerminalAutoScrolling = true;
 let isJoystickVisible = false;
 
+// Echo resolver for send chain.
+let echoResolver = null;
+
+// Timing measurement.
+const pendingMessages = new Map(); // messageId -> sendTimestamp
+let messageIdCounter = 0;
+const timingSamples = []; // Keep all samples for average
+
 const logToTerminal = (message, type = '') => {
   terminalContainer.insertAdjacentHTML('beforeend', `<div${type && ` class="${type}"`}>${message}</div>`);
 
@@ -38,8 +46,47 @@ const bluetoothTerminal = new BluetoothTerminal({
   // logLevel: 'log',
 });
 
+// Helper function to send a message with timing measurement
+const sendMessageWithTiming = async (message) => {
+  const messageId = messageIdCounter++;
+  const sendTime = performance.now();
+
+  try {
+    await bluetoothTerminal.send(message);
+    // Only track if send succeeded
+    pendingMessages.set(messageId, sendTime);
+  } catch (error) {
+    // Decrement counter since this ID won't be used
+    messageIdCounter--;
+    throw error;
+  }
+};
+
 // Set a callback that will be called when an incoming message from the connected device is received.
 bluetoothTerminal.onReceive((message) => {
+  const receiveTime = performance.now();
+
+  // Measure round-trip time if we have pending messages.
+  if (pendingMessages.size > 0) {
+    // Get the oldest pending message (FIFO).
+    const [messageId, sendTime] = pendingMessages.entries().next().value;
+    pendingMessages.delete(messageId);
+
+    const roundTripTime = Math.round(receiveTime - sendTime);
+    timingSamples.push(roundTripTime);
+
+    // Calculate average across all samples.
+    const average = Math.round(timingSamples.reduce((a, b) => a + b, 0) / timingSamples.length);
+
+    logToTerminal(`Round-trip: ${roundTripTime}ms, average: ${average}ms (${timingSamples.length} samples)`, 'timing');
+  }
+
+  // Signal waiting sender that echo was received.
+  if (echoResolver) {
+    echoResolver(message);
+    echoResolver = null;
+  }
+
   logToTerminal(message, 'incoming');
 });
 
@@ -61,9 +108,39 @@ const joystick = new Joystick({
   handle: joystickHandle,
 });
 
-joystick.onUpdate((x, y) => {
-  console.log({x, y});
-});
+// Wait for echo response from rover.
+const waitForEcho = () => {
+  return new Promise((resolve, reject) => {
+    echoResolver = resolve;
+
+    // Timeout safety net.
+    setTimeout(() => {
+      if (echoResolver === resolve) {
+        echoResolver = null;
+        reject(new Error('Echo timeout'));
+      }
+    }, 2000);
+  });
+};
+
+// Continuously send joystick position while visible.
+const processSendChain = async () => {
+  while (isJoystickVisible) {
+    const x = joystick.getX();
+    const y = joystick.getY();
+    const message = JSON.stringify({x, y});
+
+    try {
+      await sendMessageWithTiming(message);
+      await waitForEcho();
+      logToTerminal(message, 'outgoing');
+    } catch (error) {
+      logToTerminal(error, 'error');
+      break;
+    }
+  }
+};
+
 
 // Bind event listeners to the UI elements.
 connectButton.addEventListener('click', async () => {
@@ -99,7 +176,7 @@ messageForm.addEventListener('submit', async (event) => {
 
   try {
     // Send a message to the connected device.
-    await bluetoothTerminal.send(messageInput.value);
+    await sendMessageWithTiming(messageInput.value);
   } catch (error) {
     logToTerminal(error, 'error');
 
@@ -124,6 +201,7 @@ toggleJoystickButton.addEventListener('click', () => {
 
   if (isJoystickVisible) {
     joystickContainer.classList.add('visible');
+    processSendChain();
   } else {
     joystickContainer.classList.remove('visible');
   }

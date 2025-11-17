@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 class Joystick {
   constructor({area, document, fractionDigits, handle}) {
     this.areaRect = null;
